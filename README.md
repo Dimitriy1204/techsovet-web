@@ -106,7 +106,7 @@ const CONFIG = {
 ## 🔗 Связанные репозитории
 
 - **[techsovet-api](https://github.com/dimitriy1204/techsovet-api)** — FastAPI-прокси для AI-агента
-- **Langflow Flow «ТехСовет»** — конфигурация AI-агента с инструментами (ID: `8d96acf3-9ca3-4e03-82fc-6dc2c821531b`)
+- **Langflow Flow «ТехСовет»** — конфигурация AI-агента с инструментами (ID: `8d96acf3-9ca3-4e03-82fc-хххххххх`)
 
 ## 📋 Требования к FastAPI-серверу
 
