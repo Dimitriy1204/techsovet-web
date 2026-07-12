@@ -151,7 +151,7 @@ const CONFIG = {
 
 ## 📄 Лицензия
 
-MIT License — см. файл [LICENSE](LICENSE)
+MIT License
 
 ## 👤 Автор
 
