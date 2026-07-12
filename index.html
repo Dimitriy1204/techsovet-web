@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТехСовет — AI-консультант</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Базовый крупный шрифт для всего интерфейса */
+        body {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .message-user {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            margin-left: 15%;
+            font-size: 18px;
+        }
+        .message-ai {
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin-right: 15%;
+            font-size: 18px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        /* Красивый перенос строк в ответах AI */
+        .message-ai p {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        /* Крупное поле ввода */
+        #message-input {
+            font-size: 20px;
+            padding: 20px 24px;
+            min-height: 70px;
+            resize: vertical;
+        }
+        
+        /* Крупная кнопка отправки */
+        #send-button {
+            font-size: 20px;
+            padding: 20px 36px;
+            font-weight: 600;
+        }
+        
+        /* Заголовок */
+        header h1 {
+            font-size: 32px;
+        }
+        header p {
+            font-size: 18px;
+        }
+        
+        /* Настройки */
+        summary {
+            font-size: 17px;
+            padding: 8px 0;
+        }
+        
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .message-user, .message-ai {
+                margin-left: 0;
+                margin-right: 0;
+            }
+            #message-input {
+                font-size: 18px;
+                padding: 16px 18px;
+            }
+            #send-button {
+                font-size: 18px;
+                padding: 16px 24px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 shadow-lg">
+        <div class="container mx-auto">
+            <h1 class="font-bold mb-2">🤖 ТехСовет</h1>
+            <p class="opacity-90">AI-консультант для технических вопросов</p>
+        </div>
+    </header>
+
+    <!-- Chat Container -->
+    <main class="flex-1 overflow-y-auto p-6 container mx-auto">
+        <div id="chat-messages" class="space-y-5">
+            <!-- Приветственное сообщение -->
+            <div class="message-ai p-6 rounded-xl shadow-md">
+                <p class="font-semibold text-blue-700 mb-2">ТехСовет</p>
+                <p>Привет! Я — ТехСовет, AI-консультант для технических вопросов. 
+                   Могу помочь с расчётами, поиском информации, анализом данных. 
+                   Задайте свой вопрос!</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Panel -->
+    <div class="bg-white border-t p-4">
+        <details class="container mx-auto">
+            <summary class="cursor-pointer text-gray-600 hover:text-gray-900 font-medium">
+                ⚙️ Настройки (нажмите для раскрытия)
+            </summary>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">
+                        Режим ответа
+                    </label>
+                    <select id="response-mode" class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:outline-none">
+                        <option value="detailed">Развёрнутый</option>
+                        <option value="short">Краткий</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">
+                        User ID (опционально)
+                    </label>
+                    <input type="text" id="user-id" placeholder="Например: user_123" 
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">
+                        API URL
+                    </label>
+                    <input type="text" id="api-url" 
+                           value="https://ТВОЙ-САЙТ.up.railway.app" 
+                           class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:outline-none">
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- Input Form -->
+    <footer class="bg-white border-t-2 p-6 shadow-lg">
+        <form id="chat-form" class="container mx-auto flex flex-col md:flex-row gap-4">
+            <textarea 
+                type="text" 
+                id="message-input" 
+                placeholder="Задайте ваш технический вопрос здесь... (Enter — отправить, Shift+Enter — новая строка)" 
+                rows="2"
+                class="flex-1 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                required
+                autocomplete="off"
+            ></textarea>
+            <button 
+                type="submit" 
+                id="send-button"
+                class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            >
+                🚀 Отправить
+            </button>
+        </form>
+        <p class="container mx-auto text-sm text-gray-500 mt-3 text-center">
+            💡 Подсказка: нажмите <kbd class="bg-gray-200 px-2 py-1 rounded">Enter</kbd> для отправки, 
+            <kbd class="bg-gray-200 px-2 py-1 rounded">Shift+Enter</kbd> для новой строки
+        </p>
+    </footer>
+
+    <script>
+        // ==================== КОНФИГУРАЦИЯ ====================
+        const CONFIG = {
+            apiUrl: 'https://ТВОЙ-САЙТ.up.railway.app',
+            defaultUserId: 'web_user_' + Math.random().toString(36).substring(7),
+            sessionId: 'session_' + Date.now()
+        };
+
+        // ==================== DOM ЭЛЕМЕНТЫ ====================
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const apiUrlInput = document.getElementById('api-url');
+        const userIdInput = document.getElementById('user-id');
+        const responseModeSelect = document.getElementById('response-mode');
+
+        // Загружаем настройки из localStorage
+        function loadSettings() {
+            const savedUrl = localStorage.getItem('techsovet_api_url');
+            const savedUserId = localStorage.getItem('techsovet_user_id');
+            const savedMode = localStorage.getItem('techsovet_response_mode');
+            
+            if (savedUrl) {
+                apiUrlInput.value = savedUrl;
+                CONFIG.apiUrl = savedUrl;
+            }
+            if (savedUserId) {
+                userIdInput.value = savedUserId;
+            }
+            if (savedMode) {
+                responseModeSelect.value = savedMode;
+            }
+        }
+
+        // Сохраняем настройки в localStorage
+        function saveSettings() {
+            localStorage.setItem('techsovet_api_url', apiUrlInput.value);
+            localStorage.setItem('techsovet_user_id', userIdInput.value);
+            localStorage.setItem('techsovet_response_mode', responseModeSelect.value);
+            CONFIG.apiUrl = apiUrlInput.value;
+        }
+
+        // ==================== ФУНКЦИИ ЧАТА ====================
+        
+        function addMessage(text, isUser = false, isLoading = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${isUser ? 'message-user' : 'message-ai'} p-6 rounded-xl shadow-md`;
+            
+            const sender = document.createElement('p');
+            sender.className = `font-semibold mb-2 ${isUser ? 'text-blue-100' : 'text-blue-700'}`;
+            sender.textContent = isUser ? '👤 Вы' : '🤖 ТехСовет';
+            
+            const content = document.createElement('p');
+            content.className = isLoading ? 'loading-dots' : '';
+            content.textContent = text;
+            
+            messageDiv.appendChild(sender);
+            messageDiv.appendChild(content);
+            chatMessages.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return content;
+        }
+
+        async function sendMessage(message) {
+            const apiUrl = apiUrlInput.value.trim();
+            const userId = userIdInput.value.trim() || CONFIG.defaultUserId;
+            const responseMode = responseModeSelect.value;
+            
+            if (!apiUrl) {
+                alert('Пожалуйста, укажите URL API в настройках');
+                return;
+            }
+
+            const payload = {
+                message: message,
+                user_id: userId,
+                session_id: CONFIG.sessionId,
+                response_mode: responseMode,
+                source: 'web'
+            };
+
+            try {
+                const response = await fetch(`${apiUrl}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                const resultText = data.result_text || 'Не удалось получить ответ от ТехСовета';
+                const metadata = `\n\n───────────────────\n⏱️ Время: ${data.process_time_seconds}с | Режим: ${data.response_mode}`;
+                
+                return resultText + metadata;
+                
+            } catch (error) {
+                console.error('Ошибка при отправке запроса:', error);
+                throw new Error(`Ошибка соединения с API: ${error.message}`);
+            }
+        }
+
+        // Обработка Enter/Shift+Enter
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Обработка отправки формы
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            saveSettings();
+
+            addMessage(message, true);
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            sendButton.disabled = true;
+            sendButton.textContent = '⏳ Отправка...';
+
+            const loadingContent = addMessage('ТехСовет думает', false, true);
+
+            try {
+                const responseText = await sendMessage(message);
+                loadingContent.classList.remove('loading-dots');
+                loadingContent.textContent = responseText;
+            } catch (error) {
+                loadingContent.classList.remove('loading-dots');
+                loadingContent.textContent = `❌ ${error.message}`;
+                loadingContent.parentElement.classList.add('bg-red-50');
+                loadingContent.parentElement.style.borderLeftColor = '#ef4444';
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = '🚀 Отправить';
+                messageInput.focus();
+            }
+        });
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        loadSettings();
+        messageInput.focus();
+    </script>
+</body>
+</html>
